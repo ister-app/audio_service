@@ -305,6 +305,11 @@ public class AudioService extends MediaBrowserServiceCompat {
     public void onCreate() {
         super.onCreate();
         instance = this;
+        // A previous instance of this service may have been destroyed by the
+        // system while the Flutter engine survived, clearing `listener` below.
+        // Reinstate it before the media session is created, so that a recreated
+        // service can still dispatch its callbacks into Dart.
+        AudioServicePlugin.restoreServiceListener();
         repeatMode = 0;
         shuffleMode = 0;
         notificationCreated = false;

@@ -148,6 +148,24 @@ public class AudioServicePlugin implements FlutterPlugin, ActivityAware {
         return audioHandlerInterface;
     }
 
+    /**
+     * Re-registers the surviving audio handler as the listener of a freshly
+     * created {@link AudioService}, if this engine still hosts one.
+     *
+     * The system may destroy the service while the Flutter engine outlives it,
+     * e.g. App Standby ("Stopping service due to app idle"). Since
+     * {@link AudioService#onDestroy} clears the static listener and the plugin
+     * otherwise only installs it when it first creates the handler interface,
+     * the recreated service would have no callback target: media session
+     * controls would be silently dropped while the notification still renders
+     * correctly from the Dart side.
+     */
+    static synchronized void restoreServiceListener() {
+        if (audioHandlerInterface != null) {
+            AudioService.init(audioHandlerInterface);
+        }
+    }
+
     private static MediaBrowserCompat mediaBrowser;
     private static MediaControllerCompat mediaController;
     private static final MediaControllerCompat.Callback controllerCallback = new MediaControllerCompat.Callback() {
