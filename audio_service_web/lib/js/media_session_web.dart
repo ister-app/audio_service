@@ -4,7 +4,7 @@
 ///  * W3C specification https://w3c.github.io/mediasession/
 ///  * MDN documentation https://developer.mozilla.org/en-US/docs/Web/API/MediaSession/
 @JS()
-library media_session_web;
+library;
 
 import 'dart:js_interop';
 

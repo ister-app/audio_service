@@ -69,5 +69,5 @@ android {
 
 dependencies {
     implementation("androidx.media:media:1.7.0")
-    implementation("androidx.core:core:1.13.1")
+    implementation("androidx.core:core:1.16.0")
 }
