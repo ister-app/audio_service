@@ -104,6 +104,10 @@ public class AudioService extends MediaBrowserServiceCompat {
     private static PendingIntent contentIntent;
     private static ServiceListener listener;
     private static List<MediaSessionCompat.QueueItem> queue = new ArrayList<>();
+    // The last metadata published from Dart. Static so it outlives a service
+    // that the system destroys while the Flutter engine keeps running: the
+    // recreated service restores it in onCreate(). See the comment there.
+    private static MediaMetadataCompat lastMediaMetadata;
     private static final Map<String, MediaMetadataCompat> mediaMetadataCache = new HashMap<>();
 
     public static void init(ServiceListener listener) {
@@ -326,6 +330,18 @@ public class AudioService extends MediaBrowserServiceCompat {
         mediaSession.setCallback(mediaSessionCallback = new MediaSessionCallback());
         setSessionToken(mediaSession.getSessionToken());
         mediaSession.setQueue(queue);
+        // Dart pushes `mediaItem`/`queue` only when they *change*, while
+        // `playbackState` is re-emitted continuously (position updates). A
+        // service the system recreated therefore ends up with a live
+        // notification, working transport buttons and no metadata at all: no
+        // title, so Android substitutes its own "<app> is running" placeholder,
+        // no album art and no duration, so no progress bar. Replay the last
+        // published metadata instead of waiting for a change that never comes.
+        if (lastMediaMetadata != null) {
+            mediaMetadata = lastMediaMetadata;
+            artBitmap = lastMediaMetadata.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART);
+            mediaSession.setMetadata(lastMediaMetadata);
+        }
 
         PowerManager pm = (PowerManager)getSystemService(Context.POWER_SERVICE);
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, AudioService.class.getName());
@@ -371,7 +387,8 @@ public class AudioService extends MediaBrowserServiceCompat {
         }
         mediaMetadata = null;
         artBitmap = null;
-        queue.clear();
+        // `queue` and `lastMediaMetadata` are deliberately left alone: they are
+        // static and are what onCreate() replays into the new media session.
         mediaMetadataCache.clear();
         controls.clear();
         artBitmapCache.evictAll();
@@ -806,6 +823,7 @@ public class AudioService extends MediaBrowserServiceCompat {
             }
         }
         this.mediaMetadata = mediaMetadata;
+        lastMediaMetadata = mediaMetadata;
         mediaSession.setMetadata(mediaMetadata);
         handler.removeCallbacksAndMessages(null);
         handler.post(this::updateNotification);
