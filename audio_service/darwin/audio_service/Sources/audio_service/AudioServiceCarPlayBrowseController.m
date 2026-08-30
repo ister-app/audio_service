@@ -128,7 +128,7 @@ API_AVAILABLE(ios(14.0))
             [template updateSections:
                 items.count > 0 ? @[[[CPListSection alloc] initWithItems:items]] : @[]];
         }];
-    }];
+    });
 }
 
 #pragma mark - Item building
