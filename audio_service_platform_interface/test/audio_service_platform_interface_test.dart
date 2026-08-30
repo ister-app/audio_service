@@ -15,7 +15,9 @@ void main() {
   test('cannot be implemented with `implements`', () {
     expect(() {
       AudioServicePlatform.instance = ImplementsAudioServicePlatform();
-    }, throwsNoSuchMethodError);
+      // plugin_platform_interface >= 2.1 fails the token check with an
+      // AssertionError in debug builds (NoSuchMethodError before that).
+    }, throwsAssertionError);
   });
 
   test('can set custom platform', () {
