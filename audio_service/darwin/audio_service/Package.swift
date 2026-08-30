@@ -19,6 +19,9 @@ let package = Package(
             dependencies: [],
             cSettings: [
                 .headerSearchPath("include/audio_service")
+            ],
+            linkerSettings: [
+                .linkedFramework("CarPlay", .when(platforms: [.iOS]))
             ]
         )
     ]

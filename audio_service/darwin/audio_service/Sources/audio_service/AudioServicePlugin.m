@@ -28,6 +28,11 @@ static NSNumber *fastForwardInterval = nil;
 static NSNumber *rewindInterval = nil;
 static MPMediaItemArtwork* artwork = nil;
 static NSMutableDictionary *nowPlayingInfo = nil;
+static BOOL handlerConfigured = NO;
+static NSMutableArray *pendingHandlerInvocations = nil;
+
+NSNotificationName const AudioServiceNotifyChildrenChangedNotification =
+    @"AudioServiceNotifyChildrenChangedNotification";
 
 @implementation AudioServicePlugin {
     FlutterMethodChannel *_channel;
@@ -56,6 +61,39 @@ static NSMutableDictionary *nowPlayingInfo = nil;
                       binaryMessenger:[registrar messenger]];
             [registrar addMethodCallDelegate:instance channel:handlerChannel];
         }
+    }
+}
+
++ (void)invokeHandlerMethod:(NSString *)method
+                  arguments:(id _Nullable)arguments
+                     result:(FlutterResult _Nullable)result {
+    @synchronized(self) {
+        if (!handlerChannel || !handlerConfigured) {
+            if (!pendingHandlerInvocations) {
+                pendingHandlerInvocations = [NSMutableArray new];
+            }
+            NSMutableDictionary *invocation = [NSMutableDictionary new];
+            invocation[@"method"] = method;
+            if (arguments) invocation[@"arguments"] = arguments;
+            if (result) invocation[@"result"] = [result copy];
+            [pendingHandlerInvocations addObject:invocation];
+            return;
+        }
+    }
+    [handlerChannel invokeMethod:method arguments:arguments result:result];
+}
+
++ (void)flushPendingHandlerInvocations {
+    NSArray *pending;
+    @synchronized(self) {
+        handlerConfigured = YES;
+        pending = pendingHandlerInvocations;
+        pendingHandlerInvocations = nil;
+    }
+    for (NSDictionary *invocation in pending) {
+        [handlerChannel invokeMethod:invocation[@"method"]
+                           arguments:invocation[@"arguments"]
+                              result:invocation[@"result"]];
     }
 }
 
@@ -141,6 +179,7 @@ static NSMutableDictionary *nowPlayingInfo = nil;
         NSDictionary *configMap = (NSDictionary *)args[@"config"];
         fastForwardInterval = configMap[@"fastForwardInterval"];
         rewindInterval = configMap[@"rewindInterval"];
+        [AudioServicePlugin flushPendingHandlerInvocations];
         result(@{});
     } else if ([@"setState" isEqualToString:call.method]) {
         NSDictionary *args = (NSDictionary *)call.arguments;
@@ -226,6 +265,14 @@ static NSMutableDictionary *nowPlayingInfo = nil;
     } else if ([@"setPlaybackInfo" isEqualToString:call.method]) {
         result(@{});
     } else if ([@"notifyChildrenChanged" isEqualToString:call.method]) {
+        NSDictionary *args = (NSDictionary *)call.arguments;
+        id parentMediaId = args[@"parentMediaId"];
+        if ([parentMediaId isKindOfClass:[NSString class]]) {
+            [[NSNotificationCenter defaultCenter]
+                postNotificationName:AudioServiceNotifyChildrenChangedNotification
+                              object:nil
+                            userInfo:@{@"parentMediaId": parentMediaId}];
+        }
         result(@{});
     } else if ([@"androidForceEnableMediaButtons" isEqualToString:call.method]) {
         result(@{});
