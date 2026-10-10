@@ -4,8 +4,8 @@ val args = listOf("-Xlint:deprecation", "-Xlint:unchecked")
 
 buildscript {
     // Uncomment when moving to Kotlin
-    // val kotlinVersion = "2.3.20"
-    val agpVersion = "9.0.1"
+    // val kotlinVersion = "2.4.21"
+    val agpVersion = "9.4.1"
     repositories {
         google()
         mavenCentral()
@@ -41,7 +41,7 @@ tasks.withType<JavaCompile>().configureEach {
 
 android {
     namespace = "com.ryanheise.audioservice"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 19

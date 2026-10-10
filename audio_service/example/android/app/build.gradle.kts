@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.ryanheise.audioserviceexample"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
