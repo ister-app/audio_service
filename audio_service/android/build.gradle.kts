@@ -5,7 +5,7 @@ val args = listOf("-Xlint:deprecation", "-Xlint:unchecked")
 buildscript {
     // Uncomment when moving to Kotlin
     // val kotlinVersion = "2.4.21"
-    val agpVersion = "9.4.1"
+    val agpVersion = "9.5.1"
     repositories {
         google()
         mavenCentral()
@@ -68,6 +68,6 @@ android {
 }
 
 dependencies {
-    implementation("androidx.media:media:1.7.0")
+    implementation("androidx.media:media:1.7.1")
     implementation("androidx.core:core:1.16.0")
 }
